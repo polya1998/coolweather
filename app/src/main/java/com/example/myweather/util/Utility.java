@@ -15,7 +15,7 @@ public class Utility {
      * 解析和处理服务器返回的省级数据
      */
     public  static boolean handleProvinceResponse(String response) throws JSONException {
-        if(TextUtils.isEmpty(response)){
+        if(!TextUtils.isEmpty(response)){
             JSONArray allProvinces=new JSONArray(response);
             for (int i =0;i<allProvinces.length();i++){
                 JSONObject provinceObject = allProvinces.getJSONObject(i);
@@ -33,7 +33,7 @@ public class Utility {
      */
     public  static boolean handleCityResponse(String response ,int provinceId) throws JSONException {
 
-        if(TextUtils.isEmpty(response)){
+        if(!TextUtils.isEmpty(response)){
             JSONArray allCity=new JSONArray(response);
             for (int i =0;i<allCity.length();i++){
                 JSONObject cityObject = allCity.getJSONObject(i);
@@ -50,7 +50,7 @@ public class Utility {
 
     public  static boolean handleCountyResponse(String response ,int cityId) throws JSONException {
 
-        if(TextUtils.isEmpty(response)){
+        if(!TextUtils.isEmpty(response)){
             JSONArray allCounties=new JSONArray(response);
             for (int i =0;i<allCounties.length();i++){
                 JSONObject countyObject = allCounties.getJSONObject(i);
