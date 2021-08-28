@@ -1,14 +1,20 @@
 package com.example.myweather;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -40,6 +46,10 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView carWashText;
     private TextView sportText;
     private ImageView bingPicqImg;
+    public SwipeRefreshLayout swipeRefresh;
+    public DrawerLayout drawerLayout;
+    private Button navbutton;
+    @SuppressLint("ResourceAsColor")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,9 +58,11 @@ public class WeatherActivity extends AppCompatActivity {
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
+
         setContentView(R.layout.activity_weather);
         bingPicqImg=findViewById(R.id.bing_pic_img);
-
+        drawerLayout=findViewById(R.id.drawer_layout);
+        navbutton=findViewById(R.id.nav_button);
         weatherLayout=findViewById(R.id.weather_layout);
         titleCity=findViewById(R.id.title_city);
         titleUpdateTime=findViewById(R.id.tile_update_time);
@@ -62,9 +74,18 @@ public class WeatherActivity extends AppCompatActivity {
         comfortText=findViewById(R.id.comfort_text);
         carWashText=findViewById(R.id.car_wash_text);
         sportText=findViewById(R.id.sport_text);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeColors(R.color.design_default_color_primary);
+        navbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString =prefs.getString("weather",null);
         String bingPic=prefs.getString("bing_pic",null);
+
         if(bingPic!=null)
         {
             Glide.with(this).load(bingPic).into(bingPicqImg);
@@ -73,18 +94,26 @@ public class WeatherActivity extends AppCompatActivity {
         {
             loadBingPic();
         }
+        final String weatherId;
         if(weatherString!=null)
         {
             //有缓存直接解析天气数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            weatherId =weather.basic.weatherId;
             showWeatherInfo(weather);
         }else {
             //无缓存时去服务器查询
-            String weatherId =getIntent().getStringExtra("weather_id");
+            weatherId =getIntent().getStringExtra("weather_id");
             //无数据时先隐藏界面，不然空数据界面很奇怪
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherId);
+            }
+        });
     }
 
     private void loadBingPic() {
@@ -107,7 +136,7 @@ public class WeatherActivity extends AppCompatActivity {
                         Glide.with(WeatherActivity.this).load(bingPic).into(bingPicqImg);
                     }
                 });
-                editor.remove("bing_pic").apply();
+
             }
         });
     }
@@ -149,8 +178,7 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText(carwash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
-        SharedPreferences.Editor editor =PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
-        editor.remove("weather").apply();
+
     }
 
     /**
@@ -166,6 +194,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -186,10 +215,19 @@ public class WeatherActivity extends AppCompatActivity {
                         }else {
                             Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
                         }
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
 
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        SharedPreferences.Editor editor =PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+//        editor.remove("weather").apply();
+//        editor.remove("bing_pic").apply();
     }
 }
